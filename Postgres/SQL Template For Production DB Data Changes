@@ -1,0 +1,154 @@
+/*
+	SQL Template for Database Data Changes
+	Author	: Donna Hull
+	Date	: 02/04/2025
+	Version	: 0.1
+	Notes 	: Each SQL Script is to contain TWO Anonymous blocks only. The first
+			  for the Server/DB check and the second to perform the ALL work required
+			  for the change. This second block can contain as many statements/actions
+			  as are required to complete the change, but MUST contain The DECLARE/BEGIN
+			  at the start of the block and the EXCEPTION/END at the end of the block.
+			  Each individual step must include a RAISE NOTICE at the end of the step
+			  giving details of the step action and/or output as confirmation of what was
+			  done.
+
+			  Testing of the script MUST be run by the developer on a lower environment. 
+			  Regardless of the tool used to run the script, the FULL script must be run AS
+			  A SCRIPT, not individual statements. 
+			  
+			  Once developed and tested, any variables, such as server name, etc that were set 
+			  for testing purposes, must be updated to appropriate production values. The script 
+			  is then to be attached to the Change Request WITHOUT any changes to the rest of the 
+			  script. PlatOps will run the supplied script, without any manual review. It is the 
+			  developers responsibility to ensure the script runs to completion without manual 
+			  intervention or changes.
+			  
+			  If multiple incidents are being run in one change window, then one script is required 
+			  per incident.
+*/
+
+
+-- Check DB/Server Name
+-- IMPORTANT : This section is NOT to be removed. All changes are to include a Server and database check
+-- Set the ServerName and DBName variables as appropriate for your change
+DO -- Anonymous Block
+$ServerCheck$
+DECLARE
+	correctServer Varchar(100) := 'plum-v14-flexible-sandbox'; --<ServerName>
+	correctDBName Varchar(100) := 'rhubarb'; --<DBName>	
+	currentServer Varchar(100);
+	currentDatabase Varchar(100);
+BEGIN
+	select replace(setting,'-data',''), current_database() 
+	into currentServer,currentDatabase 
+	from pg_settings 
+	where name='azure.customer_resource_group';
+	
+    if currentServer <> correctServer THEN
+    RAISE EXCEPTION
+      USING DETAIL = 'Wrong SERVER! Server [' || currentServer|| '] should be [' || correctServer|| ']';
+    END IF;	if currentDatabase <> correctDBName THEN
+    RAISE EXCEPTION
+      USING DETAIL = 'Wrong DB! DB [' || currentDatabase || '] should be [' || correctDBName|| ']';
+    END IF;
+	RAISE NOTICE E'CORRECT Server and DB : Server [%], Database [%]\n',currentServer,currentDatabase;
+END
+$ServerCheck$;
+
+
+
+
+--DTSRD-4220 - example with 3 linked sql statements
+DO
+$CR$
+DECLARE
+  TicketNumber varchar(10) := 'DTSRD-4220';
+  AffectedRows integer;
+  StatusText varchar(20);
+  --<include any script variables here>
+  FirstId int := 1;
+  SecondId int := 4;
+  ThirdId int := 3;
+  --SecondId = 4 to see example of successful completion, 
+  --SecondId = 2 to see example of failure
+BEGIN
+	-- Step 4.1
+    StatusText='Step 4.1';
+    UPDATE	dh_test
+	SET	    notes = 'Testing Script second update fails'
+	WHERE	id = FirstId;
+    GET DIAGNOSTICS AffectedRows = ROW_COUNT;
+    if AffectedRows <> 1 then
+       RAISE EXCEPTION '% % : ERROR wrong number of rows altered --> %',TicketNumber,StatusText,AffectedRows;
+    end if;
+    RAISE NOTICE '% % : Rows UPDATED by query=%', TicketNumber,StatusText, AffectedRows ;
+
+    -- Step 4.2
+    StatusText='Step 4.2';
+    UPDATE	dh_test
+	SET	    notes = 'Testing Script failing step'
+	WHERE	id = SecondId; 
+    GET DIAGNOSTICS AffectedRows = ROW_COUNT;
+    if AffectedRows <> 1 then
+       RAISE EXCEPTION '% % : ERROR wrong number of rows altered --> %',TicketNumber,StatusText,AffectedRows;
+    end if;
+    RAISE NOTICE '% % : Rows UPDATED by query=%', TicketNumber,StatusText, AffectedRows ;
+
+    -- Step 4.3
+    StatusText='Step 4.3';
+    UPDATE	dh_test
+	SET	    notes = 'Testing Script only gets executed if second completes'
+	WHERE	id = ThirdId;
+    GET DIAGNOSTICS AffectedRows = ROW_COUNT;
+    if AffectedRows <> 1 then
+       RAISE EXCEPTION '% % : ERROR wrong number of rows altered --> %',TicketNumber,StatusText,AffectedRows;
+    end if;
+    RAISE NOTICE '% % : Rows UPDATED by query=%', TicketNumber,StatusText, AffectedRows ;
+
+
+	-- <add more Steps here if required>
+
+
+
+	RAISE NOTICE E'% SUCCESSFUL COMPLETION, all changes COMMITTED.\n',TicketNumber;
+ 
+EXCEPTION
+    WHEN others THEN
+    RAISE NOTICE '% % : ERROR RAISED, all changes ROLLED BACK', TicketNumber,StatusText;
+    RAISE EXCEPTION
+        USING DETAIL = 'ERROR:Change Failed [' || SQLSTATE|| ']' || SQLERRM;
+        --transaction is rolled back;
+END 
+$CR$;
+
+
+
+
+
+/*
+Example Output of Script with Failing Step 4.2
+
+NOTICE:  CORRECT Server and DB : Server [plum-v14-flexible-sandbox], Database [rhubarb]
+
+NOTICE:  DTSRD-4220 Step 4.1 : Rows UPDATED by query=1
+NOTICE:  DTSRD-4220 Step 4.2 : ERROR RAISED, all changes ROLLED BACK
+
+ERROR:  P0001
+ERROR:Change Failed [P0001]DTSRD-4220 Step 4.2 : ERROR wrong number of rows altered --> 0 
+
+SQL state: P0001
+Detail: ERROR:Change Failed [P0001]DTSRD-4220 Step 4.2 : ERROR wrong number of rows altered --> 0
+Context: PL/pgSQL function inline_code_block line 56 at RAISE
+
+
+
+
+Example Output of Script with Successful Step 4.2
+
+NOTICE:  CORRECT Server and DB : Server [plum-v14-flexible-sandbox], Database [rhubarb]
+
+NOTICE:  DTSRD-4220 Step 4.1 : Rows UPDATED by query=1
+NOTICE:  DTSRD-4220 Step 4.2 : Rows UPDATED by query=1
+NOTICE:  DTSRD-4220 Step 4.3 : Rows UPDATED by query=1
+NOTICE:  DTSRD-4220 SUCCESSFUL COMPLETION, all changes COMMITTED.
+*/
