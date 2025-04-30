@@ -1,8 +1,8 @@
 /*
 	SQL Template for Database Data Changes
 	Author	: Donna Hull
-	Date	: 02/04/2025
-	Version	: 0.1
+	Date	: 17/04/2025
+	Version	: 0.2
 	Notes 	: Each SQL Script is to contain TWO Anonymous blocks only. The first
 			  for the Server/DB check and the second to perform the ALL work required
 			  for the change. This second block can contain as many statements/actions
@@ -39,7 +39,7 @@ DECLARE
 	currentServer Varchar(100);
 	currentDatabase Varchar(100);
 BEGIN
-	select replace(setting,'-data',''), current_database() 
+	select REVERSE(REGEXP_REPLACE(REVERSE(setting), '-atad', '',1,1)), current_database() 
 	into currentServer,currentDatabase 
 	from pg_settings 
 	where name='azure.customer_resource_group';
