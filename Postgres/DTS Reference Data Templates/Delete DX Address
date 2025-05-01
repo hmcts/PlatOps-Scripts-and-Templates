@@ -1,0 +1,76 @@
+ /*
+	Delete DX Address : 	Based on
+	SQL Template for Database Data Changes
+	Author	: Donna Hull
+	Date	: 17/04/2025
+	Version	: 0.2
+*/
+
+
+-- Check DB/Server Name
+-- IMPORTANT : This section is NOT to be removed. All changes are to include a Server and database check
+-- Set the ServerName and DBName variables as appropriate for your change
+DO -- Anonymous Block
+$ServerCheck$
+DECLARE
+	correctServer Varchar(100) := 'plum-v14-flexible-sandbox'; --<ServerName>
+	correctDBName Varchar(100) := 'rhubarb'; --<DBName>	
+	currentServer Varchar(100);
+	currentDatabase Varchar(100);
+BEGIN
+	select REVERSE(REGEXP_REPLACE(REVERSE(setting), '-atad', '',1,1)), current_database() 
+	into currentServer,currentDatabase 
+	from pg_settings 
+	where name='azure.customer_resource_group';
+	
+    if currentServer <> correctServer THEN
+    RAISE EXCEPTION
+      USING DETAIL = 'Wrong SERVER! Server [' || currentServer|| '] should be [' || correctServer|| ']';
+    END IF;	if currentDatabase <> correctDBName THEN
+    RAISE EXCEPTION
+      USING DETAIL = 'Wrong DB! DB [' || currentDatabase || '] should be [' || correctDBName|| ']';
+    END IF;
+	RAISE NOTICE E'CORRECT Server and DB : Server [%], Database [%]\n',currentServer,currentDatabase;
+END
+$ServerCheck$;
+
+
+
+
+--DTSRD-xxxx
+DO
+$CR$
+DECLARE
+  TicketNumber varchar(10) := 'DTSRD-xxxx';
+  AffectedRows integer;
+  StatusText varchar(20);
+  --<include any script variables here> 
+  vOrdIdentifier varchar(20) := 'xxx';
+BEGIN
+	
+	-- Step 1
+  StatusText='Step 1';
+	DELETE
+  FROM dbrefdata.dx_address
+  WHERE contact_information_id in 
+    (SELECT ci.id
+    FROM dbrefdata.contact_information ci
+      JOIN dbrefdata.organisation o ON ci.organisation_id = o.id
+    WHERE o.organisation_identifier = vOrdIdentifier
+    );
+  GET DIAGNOSTICS AffectedRows = ROW_COUNT;
+  IF AffectedRows <> 1 THEN
+    RAISE EXCEPTION '% % : ERROR wrong number of rows deleted --> %',TicketNumber,StatusText,AffectedRows;
+  END IF;
+  RAISE NOTICE '% % : Rows DELETED by query=%', TicketNumber,StatusText, AffectedRows ;
+
+	RAISE NOTICE E'% SUCCESSFUL COMPLETION, all changes COMMITTED.\n',TicketNumber;
+ 
+EXCEPTION
+    WHEN others THEN
+    RAISE NOTICE '% % : ERROR RAISED, all changes ROLLED BACK', TicketNumber,StatusText;
+    RAISE EXCEPTION
+        USING DETAIL = 'ERROR:Change Failed [' || SQLSTATE|| ']' || SQLERRM;
+        --transaction is rolled back;
+END 
+$CR$;
