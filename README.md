@@ -1,2 +1,2 @@
 # Database-Scripts-and-Templates
-A repository to contain scripts or templates for use on Postgres and SQL Server databases
+A repository to contain scripts or templates for use by PlatOps e.g. DbScripts for Postgres and SQL Server databases
