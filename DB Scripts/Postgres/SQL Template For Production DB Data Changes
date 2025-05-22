@@ -1,8 +1,8 @@
 /*
 	SQL Template for Database Data Changes
 	Author	: Donna Hull
-	Date	: 17/04/2025
-	Version	: 0.2
+	Date	: 22/05/2025
+	Version	: 0.3
 	Notes 	: Each SQL Script is to contain TWO Anonymous blocks only. The first
 			  for the Server/DB check and the second to perform the ALL work required
 			  for the change. This second block can contain as many statements/actions
@@ -62,7 +62,7 @@ $ServerCheck$;
 DO
 $CR$
 DECLARE
-  TicketNumber varchar(10) := 'DTSRD-4220';
+  TicketNumber varchar(50) := 'DTSRD-4220';
   AffectedRows integer;
   StatusText varchar(20);
   --<include any script variables here>
