@@ -13,7 +13,7 @@
 DO -- Anonymous Block
 $ServerCheck$
 DECLARE
-	correctServer Varchar(100) := 'plum-v14-flexible-sandbox'; --<ServerName>
+	correctServer Varchar(100) := 'rd-professional-api-postgres-db-v16-aat'; --<ServerName>
 	correctDBName Varchar(100) := 'dbrefdata'; --<DBName>	
 	currentServer Varchar(100);
 	currentDatabase Varchar(100);
@@ -41,7 +41,7 @@ $ServerCheck$;
 DO
 $CR$
 DECLARE
-  TicketNumber varchar(10) := 'DTSRD-xxxx';
+  TicketNumber varchar(50) := 'DTSRD-xxxx';
   AffectedRows integer;
   StatusText varchar(20);
   --<include any script variables here>
