@@ -41,7 +41,7 @@ $ServerCheck$;
 DO
 $CR$
 DECLARE
-  TicketNumber varchar(10) := 'DTSRD-xxxx';
+  TicketNumber varchar(50) := 'DTSRD-xxxx';
   AffectedRows integer;
   StatusText varchar(20);
   --<include any script variables here>
