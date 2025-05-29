@@ -2,8 +2,8 @@
 	Update Organisation Administrator : 	Based on
 	SQL Template for Database Data Changes
 	Author	: Donna Hull
-	Date	: 17/04/2025
-	Version	: 0.2
+	Date	: 29/05/2025
+	Version	: 0.4
 */
 
 
@@ -18,10 +18,13 @@ DECLARE
 	currentServer Varchar(100);
 	currentDatabase Varchar(100);
 BEGIN
-	select REVERSE(REGEXP_REPLACE(REVERSE(setting), '-atad', '',1,1)), current_database() 
-	into currentServer,currentDatabase 
-	from pg_settings 
-	where name='azure.customer_resource_group';
+    RAISE NOTICE E'TEMPLATE : Update Organisation Administrator\n';
+
+    RAISE NOTICE E'Performing SERVER and DB Check';
+    select REVERSE(REGEXP_REPLACE(REVERSE(setting), '-atad', '',1,1)), current_database() 
+    into currentServer,currentDatabase 
+    from pg_settings 
+    where name='azure.customer_resource_group';
 	
     if currentServer <> correctServer THEN
     RAISE EXCEPTION
@@ -30,7 +33,7 @@ BEGIN
     RAISE EXCEPTION
       USING DETAIL = 'Wrong DB! DB [' || currentDatabase || '] should be [' || correctDBName|| ']';
     END IF;
-	RAISE NOTICE E'CORRECT Server and DB : Server [%], Database [%]\n',currentServer,currentDatabase;
+    RAISE NOTICE E'SUCCESSFUL Server and DB : Server [%], Database [%]\n',currentServer,currentDatabase;
 END
 $ServerCheck$;
 
@@ -43,7 +46,7 @@ $CR$
 DECLARE
   TicketNumber varchar(50) := 'DTSRD-xxxx';
   AffectedRows integer;
-  StatusText varchar(20);
+  StatusText varchar(100);
   --<include any script variables here>
   EmailNew varchar(200) := '<New email address>';
   EmailOld varchar(200) := '<Old email address>';
@@ -52,23 +55,29 @@ DECLARE
   UserIdOld uuid;
 BEGIN
 
-	StatusText='Select New User Id';
-	SELECT 	pu.id
-	INTO	UserIdNew
-	FROM    dbrefdata.professional_user pu
+    StatusText='Select New User Id';
+    SELECT 	pu.id
+    INTO	UserIdNew
+    FROM    dbrefdata.professional_user pu
     WHERE   LOWER(pu.email_address) = LOWER(EmailNew);
-	RAISE NOTICE 'NewUserId [%] for Email [%]',UserIdNew,EmailNew;
+    IF UserIdNew is NULL THEN
+       RAISE EXCEPTION '% % : ERROR Failed to find NewUserId for Email [%]',TicketNumber,StatusText,EmailNew;
+    end if;    
+    RAISE NOTICE 'NewUserId [%] for Email [%]',UserIdNew,EmailNew;
 	
-	StatusText='Select Old User Id';
-	SELECT 	pu.id
-	INTO	UserIdOld
-	FROM    dbrefdata.professional_user pu
+    StatusText='Select Old User Id';
+    SELECT 	pu.id
+    INTO	UserIdOld
+    FROM    dbrefdata.professional_user pu
     WHERE   LOWER(pu.email_address) = LOWER(EmailOld)
-	AND 	pu.organisation_id = (SELECT id from dbrefdata.organisation o where o.organisation_identifier = OrdIdentifier);
-	RAISE NOTICE 'OldUserId [%] for Email [%]',UserIdOld,EmailOld;
+    AND 	pu.organisation_id = (SELECT id from dbrefdata.organisation o where o.organisation_identifier = OrdIdentifier);
+    IF UserIdOld is NULL THEN
+       RAISE EXCEPTION '% % : ERROR Failed to find OldUserId for Email [%]',TicketNumber,StatusText,EmailOld;
+    end if; 
+    RAISE NOTICE 'OldUserId [%] for Email [%]',UserIdOld,EmailOld;
 
 		
-	-- Step 1
+    -- Step 1
     StatusText='Step 1';
     UPDATE dbrefdata.user_attribute
 	SET professional_user_id = UserIdNew
@@ -92,7 +101,7 @@ BEGIN
     RAISE NOTICE '% % : Rows UPDATED by query=%', TicketNumber,StatusText, AffectedRows ;
 
 
-	RAISE NOTICE E'% SUCCESSFUL COMPLETION, all changes COMMITTED.\n',TicketNumber;
+    RAISE NOTICE E'% SUCCESSFUL COMPLETION, all changes COMMITTED.\n',TicketNumber;
  
 EXCEPTION
     WHEN others THEN
