@@ -2,23 +2,6 @@
 set -euo pipefail
 
 # Report Platform Operations chart dependency adoption from hmcts-charts.
-#
-# Suggested usage:
-#
-# 1. Scan an existing hmcts-charts checkout with explicit target versions:
-#    ./chart-adoption.sh \
-#      --charts-dir ../../hmcts-charts \
-#      --charts '[chart-java:5.3.0,chart-nodejs:3.2.0,chart-function:2.6.0]'
-#
-# 2. Seed targets from cnp-deprecation-map and add or override a chart:
-#    ./chart-adoption.sh \
-#      --charts-dir ../../hmcts-charts \
-#      --nagger ../../cnp-deprecation-map/nagger-versions.yaml \
-#      --charts 'chart-postgresql:1.1.2' \
-#      --format md
-#
-# 3. Clone the latest hmcts-charts and write Jira-ready Markdown:
-#    ./chart-adoption.sh --clone --charts 'chart-java:6.1.0' --format md --out adoption.md
 
 usage() {
   cat <<'EOF'
