@@ -8,7 +8,7 @@ usage() {
 Usage:
   ./chart-adoption.sh (--charts-dir <path> | --clone) \
     [--nagger <nagger-versions.yaml>] [--charts <chart:version,...>] \
-    [--format table|md|csv] [--out <file>] [--check-latest]
+    [--format table|csv] [--out <file>] [--check-latest]
 
 Options:
   --charts-dir <path>  Existing hmcts-charts checkout.
@@ -16,7 +16,7 @@ Options:
   --nagger <path>      Seed targets from the helm section of nagger-versions.yaml.
   --charts <list>      Add or override targets. Accepts chart-java:x.y.z or java:x.y.z.
                        Square brackets around the comma-separated list are optional.
-  --format <format>    Output format: table (default), md, or csv.
+  --format <format>    Output format: table (default) or csv.
   --out <file>         Write the report to a file instead of standard output.
   --check-latest       Query stable GitHub releases and show the latest version per target.
   -h, --help           Show this help.
@@ -137,7 +137,7 @@ if [[ "$OUTPUT_FORMAT" == "table" ]]; then
   require_cmd column
 fi
 
-if [[ "$OUTPUT_FORMAT" != "table" && "$OUTPUT_FORMAT" != "md" && "$OUTPUT_FORMAT" != "csv" ]]; then
+if [[ "$OUTPUT_FORMAT" != "table" && "$OUTPUT_FORMAT" != "csv" ]]; then
   echo "Unsupported format: $OUTPUT_FORMAT" >&2
   exit 1
 fi
@@ -424,18 +424,6 @@ render_table() {
   } | column -t -s $'\t'
 }
 
-render_markdown() {
-  jq -r '
-    (["Chart", "Target", "Latest", "OK", "BELOW", "n/a", "UNKNOWN", "EXTERNAL"] | "| " + join(" | ") + " |"),
-    (["---", "---", "---", "---:", "---:", "---:", "---:", "---:"] | "| " + join(" | ") + " |"),
-    (.summary[] | ["chart-" + .name, .target, (.latest // "not checked"), (.ok | tostring), (.below | tostring), (.unavailable | tostring), (.unknown | tostring), (.external | tostring)] | "| " + join(" | ") + " |"),
-    "",
-    ((["Chart name", "Chart path"] + [.targets[] | "chart-" + .name + " (>=" + .target + ")"]) | "| " + join(" | ") + " |"),
-    ((["---", "---"] + [.targets[] | "---"]) | "| " + join(" | ") + " |"),
-    (.rows[] | ([.chart, .path] + [.cells[].display]) | "| " + join(" | ") + " |")
-  ' "$REPORT_JSON"
-}
-
 render_csv() {
   jq -r '
     (["Chart name", "Chart path"] + [.targets[] | "chart-" + .name + " (>=" + .target + ")"] | @csv),
@@ -446,9 +434,6 @@ render_csv() {
 case "$OUTPUT_FORMAT" in
   table)
     render_table >"$RENDERED_REPORT"
-    ;;
-  md)
-    render_markdown >"$RENDERED_REPORT"
     ;;
   csv)
     render_csv >"$RENDERED_REPORT"

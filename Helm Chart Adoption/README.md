@@ -18,8 +18,8 @@ The versions below are illustrative. Use the approved published targets for adop
 ./chart-adoption.sh \
   --charts-dir ../../hmcts-charts \
   --charts '[chart-java:6.1.0,chart-nodejs:3.3.0,chart-postgresql:1.1.2]' \
-  --format md \
-  --out adoption.md
+  --format csv \
+  --out adoption.csv
 ```
 
 Targets can instead come from `--nagger <nagger-versions.yaml>`. Explicit `--charts`
@@ -32,7 +32,7 @@ fresh checkout. Run `./chart-adoption.sh --help` for all options.
 - Cells are `OK`, `BELOW`, `n/a`, or `UNKNOWN`. Prereleases are `BELOW`.
 - Only HMCTS chart repositories count. Same-named external dependencies are excluded.
 - Chart name and path are both shown so nested charts remain distinct.
-- Table and Markdown include a summary. CSV writes its summary to standard error.
+- Table includes a summary. CSV writes its summary to standard error.
 - `--check-latest` is informational and never changes supplied targets. Set `GH_TOKEN`
   to avoid GitHub API rate limits.
 

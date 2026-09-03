@@ -100,16 +100,6 @@ assert_line 'chart-java: target=6.1.0 latest=not checked OK=1 BELOW=0 n/a=2 UNKN
 assert_line 'chart-ccd: target=9.2.3 latest=not checked OK=0 BELOW=0 n/a=2 UNKNOWN=1 EXTERNAL=0' "$WORK_DIR/summary.txt"
 assert_line 'chart-postgresql: target=1.1.2 latest=not checked OK=1 BELOW=0 n/a=2 UNKNOWN=0 EXTERNAL=1' "$WORK_DIR/summary.txt"
 
-"$SCANNER" \
-  --charts-dir "$WORK_DIR/hmcts-charts" \
-  --charts 'chart-java:6.1.0' \
-  --format md \
-  --out "$WORK_DIR/report.md" \
-  2>/dev/null
-
-assert_line '| chart-java | 6.1.0 | not checked | 1 | 0 | 2 | 0 | 0 |' "$WORK_DIR/report.md"
-assert_line '| service-b-prod | nested/service-b/prod | n/a |' "$WORK_DIR/report.md"
-
 mkdir -p "$WORK_DIR/bin"
 cat >"$WORK_DIR/bin/curl" <<'EOF'
 #!/usr/bin/env bash
@@ -133,6 +123,18 @@ PATH="$WORK_DIR/bin:$PATH" "$SCANNER" \
   2>"$WORK_DIR/latest-summary.txt"
 
 assert_line 'chart-java: target=6.1.0 latest=6.1.0 OK=1 BELOW=0 n/a=2 UNKNOWN=0 EXTERNAL=0' "$WORK_DIR/latest-summary.txt"
+
+if "$SCANNER" \
+  --charts-dir "$WORK_DIR/hmcts-charts" \
+  --charts 'chart-java:6.1.0' \
+  --format md \
+  >"$WORK_DIR/invalid.out" \
+  2>"$WORK_DIR/invalid.err"; then
+  echo "Expected Markdown output format to fail" >&2
+  exit 1
+fi
+
+assert_line 'Unsupported format: md' "$WORK_DIR/invalid.err"
 
 if "$SCANNER" \
   --charts-dir "$WORK_DIR/hmcts-charts" \
