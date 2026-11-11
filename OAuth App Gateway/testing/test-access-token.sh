@@ -46,8 +46,8 @@ test-gateway-policy-valid-token() {
  local GATEWAY_PORT="8443"
  local CA_CERT_PATH="/Users/charles.luo/dev/certs/nl.cjscp.org.uk-root-ca.pem"
 
- local API_SCOPE="api://6d9ad1f5-5d0c-4c71-9bfd-63ec724a3344/api.read"
- local valid_token=$(get_token_valid "$API_SCOPE" "e2995d11-9947-4e78-9de6-d44e0603518e")
+ local API_SCOPE="api://6d9ad1f5-5d0c-xxxxxx/api.read"
+ local valid_token=$(get_token_valid "$API_SCOPE" "e2995d11-9947-4e78-xxxxxx")
  local partial_token=$(echo "$valid_token" | cut -c1-20)
  echo "Testing gateway policy with valid token for host: $TEST_HOST, path: $TEST_PATH Valid token: [$partial_token...]"
  curl -k --silent --show-error --write-out '\nHTTP %{http_code}\n' \
@@ -71,8 +71,8 @@ test-gateway-policy-invalid-token(){
   local TEST_HOST="$1"
   local TEST_PATH="$2"
   local GATEWAY_PORT="8443"
-  local API_SCOPE="api://6d9ad1f5-5d0c-4c71-9bfd-63ec724a3344/api.read"
-  local invalid_token=$(get_token_wrong_audience "e2995d11-9947-4e78-9de6-d44e0603518e")
+  local API_SCOPE="api://6d9ad1f5-xxxxxxx/api.read"
+  local invalid_token=$(get_token_wrong_audience "e2995d11-9947-xxxxxx")
   local partial_token=$(echo "$invalid_token" | cut -c1-20)
   echo "Testing gateway policy with invalid token for host: $TEST_HOST, path: $TEST_PATH Invalid token: [$partial_token...]"
   curl -k --silent --show-error --write-out '\nHTTP %{http_code}\n' \
@@ -92,8 +92,6 @@ test-gateway-policy-invalid-token "jwt-check.auth01.ste.nl.cjscp.org.uk" "/"
 #inspect_gateway_cert "jwt-check.auth01.ste.nl.cjscp.org.uk"
 
 #connect_to_jwt_test "jwt-check.auth01.ste.nl.cjscp.org.uk"
-
-
 
 # find the PID of the port-forward process and kill it when done
 #lsof -nP -iTCP:8443 -sTCP:LISTEN
