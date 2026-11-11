@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oauth-gateway-test-page
+  namespace: ns-ste-ops-99
+data:
+  index.html: |
+    <!doctype html>
+    <html><head><title>OAuth gateway test</title></head>
+    <body><h1>oauth-gateway-policy-test</h1></body></html>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth-gateway-test-page
+  namespace: ns-ste-ops-99
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oauth-gateway-test-page
+  template:
+    metadata:
+      labels:
+        app: oauth-gateway-test-page
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: http
+          image: crmdvrepo01.azurecr.io/registry.hub.docker.com/library/busybox:1.37.0
+          command: ["httpd", "-f", "-p", "8080", "-h", "/www"]
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: page
+              mountPath: /www
+              readOnly: true
+      volumes:
+        - name: page
+          configMap:
+            name: oauth-gateway-test-page
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth-gateway-test-page
+  namespace: ns-ste-ops-99
+spec:
+  type: ClusterIP
+  selector:
+    app: oauth-gateway-test-page
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: oauth-gateway-test-page
+  namespace: ns-ste-ops-99
+spec:
+  hosts:
+    - jwt-check.auth01.ste.nl.cjscp.org.uk
+  gateways:
+    - istio-ingress-oauth/istio-ingressgateway-oauth
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: oauth-gateway-test-page.ns-ste-ops-99.svc.cluster.local
+            port:
+              number: 8080
