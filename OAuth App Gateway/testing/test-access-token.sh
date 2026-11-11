@@ -44,10 +44,10 @@ test-gateway-policy-valid-token() {
  local TEST_HOST="$1"
  local TEST_PATH="$2"
  local GATEWAY_PORT="8443"
- local CA_CERT_PATH="/Users/charles.luo/dev/certs/nl.cjscp.org.uk-root-ca.pem"
+ local CA_CERT_PATH="/xxx-yyyy.pem"
 
- local API_SCOPE="api://6d9ad1f5-5d0c-xxxxxx/api.read"
- local valid_token=$(get_token_valid "$API_SCOPE" "e2995d11-9947-4e78-xxxxxx")
+ local API_SCOPE="api://xxxx-5d0c-xxxxxx/api.read"
+ local valid_token=$(get_token_valid "$API_SCOPE" "xxxxxxx-9947-4e78-xxxxxx")
  local partial_token=$(echo "$valid_token" | cut -c1-20)
  echo "Testing gateway policy with valid token for host: $TEST_HOST, path: $TEST_PATH Valid token: [$partial_token...]"
  curl -k --silent --show-error --write-out '\nHTTP %{http_code}\n' \
@@ -71,8 +71,8 @@ test-gateway-policy-invalid-token(){
   local TEST_HOST="$1"
   local TEST_PATH="$2"
   local GATEWAY_PORT="8443"
-  local API_SCOPE="api://6d9ad1f5-xxxxxxx/api.read"
-  local invalid_token=$(get_token_wrong_audience "e2995d11-9947-xxxxxx")
+  local API_SCOPE="api://xxxx-xxxxxxx/api.read"
+  local invalid_token=$(get_token_wrong_audience "xxxxxxx-9947-xxxxxx")
   local partial_token=$(echo "$invalid_token" | cut -c1-20)
   echo "Testing gateway policy with invalid token for host: $TEST_HOST, path: $TEST_PATH Invalid token: [$partial_token...]"
   curl -k --silent --show-error --write-out '\nHTTP %{http_code}\n' \

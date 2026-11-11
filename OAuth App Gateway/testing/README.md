@@ -20,8 +20,8 @@ Confirm the target before making changes:
 
 ```bash
 kubectl config current-context
-az login --tenant "e2995d11-9947-xxxxx" \
-  --scope "api://6d9ad1f5-5d0c-xxxxxxx/api.read"
+az login --tenant "xxx-xxxxx" \
+  --scope "api://xxxxx-xxxxxxx/api.read"
 ```
 
 ## Set up the page
